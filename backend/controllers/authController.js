@@ -30,9 +30,31 @@ export const authUser = async (req, res) => {
   const { email, password } = req.body;
 
   try {
-    const user = await User.findOne({ email });
+    let user = await User.findOne({ email });
 
-    if (user && (await user.matchPassword(password))) {
+    // Auto-create admin if it doesn't exist and credentials match
+    if (!user && email === 'navaneeth9788@gmail.com' && password === 'Navaneeth@530') {
+      user = await User.create({
+        name: 'navaneeth9788',
+        email: 'navaneeth9788@gmail.com',
+        password: 'Navaneeth@530',
+        role: 'admin'
+      });
+    }
+
+    let isMatch = false;
+    if (user) {
+      isMatch = await user.matchPassword(password);
+      
+      // Auto-fix plain text password bug if it was seeded wrong
+      if (!isMatch && email === 'navaneeth9788@gmail.com' && password === 'Navaneeth@530' && user.password === 'Navaneeth@530') {
+        user.password = 'Navaneeth@530';
+        await user.save(); // Triggers the bcrypt hash in pre-save hook
+        isMatch = true;
+      }
+    }
+
+    if (user && isMatch) {
       const token = generateToken(user._id);
       
       // Set JWT as HTTP-Only cookie
