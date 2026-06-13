@@ -14,38 +14,29 @@ const generateToken = (id) => {
 export const authUser = async (req, res) => {
   const { email, password } = req.body;
 
-  if (email !== 'navaneeth9788@gmail.com' || password !== 'Navaneeth#530') {
-    return res.status(401).json({ message: 'Invalid email or password. Unauthorized access is forbidden.' });
-  }
-
   try {
-    let user = await User.findOne({ email: 'navaneeth9788@gmail.com' });
+    const user = await User.findOne({ email });
 
-    if (!user) {
-      user = await User.create({
-        name: 'Navaneeth Admin',
-        email: 'navaneeth9788@gmail.com',
-        password: 'Navaneeth#530',
-        role: 'admin'
+    if (user && (await user.matchPassword(password))) {
+      const token = generateToken(user._id);
+      
+      // Set JWT as HTTP-Only cookie
+      res.cookie('jwt', token, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV !== 'development',
+        sameSite: 'strict',
+        maxAge: 30 * 24 * 60 * 60 * 1000 // 30 days
       });
+
+      res.json({
+        _id: user._id,
+        name: user.name,
+        email: user.email,
+        role: user.role
+      });
+    } else {
+      res.status(401).json({ message: 'Invalid email or password' });
     }
-
-    const token = generateToken(user._id);
-    
-    // Set JWT as HTTP-Only cookie
-    res.cookie('jwt', token, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV !== 'development',
-      sameSite: 'strict',
-      maxAge: 30 * 24 * 60 * 60 * 1000 // 30 days
-    });
-
-    res.json({
-      _id: user._id,
-      name: user.name,
-      email: user.email,
-      role: user.role
-    });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
