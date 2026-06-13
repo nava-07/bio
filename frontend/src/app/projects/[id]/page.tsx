@@ -14,8 +14,49 @@ export default function ProjectDetails() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
+  const defaultProjects = [
+    {
+      _id: "1",
+      title: "Quantum E-Commerce",
+      description: "A next-gen e-commerce platform built with Next.js and Stripe, featuring 3D product previews.",
+      image: "https://images.unsplash.com/photo-1557821552-17105176677c?q=80&w=1000&auto=format&fit=crop",
+      githubUrl: "#",
+      liveDemoUrl: "#",
+      categories: ["Full Stack", "React"],
+      technologies: ["Next.js", "MongoDB", "Stripe", "Three.js"]
+    },
+    {
+      _id: "2",
+      title: "Neon Task Manager",
+      description: "A beautiful, futuristic task manager with real-time collaboration features.",
+      image: "https://images.unsplash.com/photo-1618761714954-0b8cd0026356?q=80&w=1000&auto=format&fit=crop",
+      githubUrl: "#",
+      liveDemoUrl: "#",
+      categories: ["Full Stack", "React"],
+      technologies: ["React", "Node.js", "Socket.io", "Tailwind"]
+    },
+    {
+      _id: "3",
+      title: "AI Image Generator",
+      description: "Generate stunning images using stable diffusion API right from this sleek dashboard.",
+      image: "https://images.unsplash.com/photo-1620641788421-7a1c342ea42e?q=80&w=1000&auto=format&fit=crop",
+      githubUrl: "#",
+      liveDemoUrl: "#",
+      categories: ["AI", "React"],
+      technologies: ["React", "Python", "FastAPI", "OpenAI"]
+    }
+  ];
+
   useEffect(() => {
     const fetchProject = async () => {
+      // Check if it's a default project first
+      const defaultProj = defaultProjects.find(p => p._id === id);
+      if (defaultProj) {
+        setProject(defaultProj);
+        setLoading(false);
+        return;
+      }
+
       try {
         const res = await axios.get(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'}/api/projects/${id}`);
         setProject(res.data);

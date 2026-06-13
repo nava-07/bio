@@ -20,7 +20,9 @@ app.use(helmet({
   crossOriginResourcePolicy: false,
 }));
 app.use(cors({
-  origin: process.env.FRONTEND_URL || 'http://localhost:3000',
+  origin: function (origin, callback) {
+    callback(null, true); // Allow any origin to avoid trailing slash matching issues
+  },
   credentials: true
 }));
 
