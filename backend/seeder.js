@@ -11,14 +11,12 @@ const importData = async () => {
   try {
     await User.deleteMany();
 
-    const createdUsers = await User.insertMany([
-      {
-        name: 'navaneeth9788',
-        email: 'navaneeth9788@gmail.com',
-        password: 'Navaneeth@530',
-        role: 'admin'
-      }
-    ]);
+    await User.create({
+      name: 'navaneeth9788',
+      email: 'navaneeth9788@gmail.com',
+      password: 'Navaneeth@530',
+      role: 'admin'
+    });
 
     console.log('Data Imported!');
     process.exit();
