@@ -71,6 +71,33 @@ app.use('/api/achievements', achievementRoutes);
 const __dirname = path.resolve();
 app.use('/uploads', express.static(path.join(__dirname, '/uploads')));
 
+app.get('/health', async (req, res) => {
+  try {
+    const mongoose = (await import('mongoose')).default;
+    const dbState = mongoose.connection.readyState;
+    const states = { 0: 'disconnected', 1: 'connected', 2: 'connecting', 3: 'disconnecting' };
+    
+    let userCount = 0;
+    let users = [];
+    if (dbState === 1) {
+      const User = (await import('./models/User.js')).default;
+      userCount = await User.countDocuments();
+      users = await User.find({}).select('name email role -_id');
+    }
+    
+    res.json({
+      status: 'ok',
+      database: states[dbState] || 'unknown',
+      mongoUri: process.env.MONGO_URI ? 'SET' : 'NOT SET',
+      userCount,
+      users,
+      env: process.env.NODE_ENV
+    });
+  } catch (error) {
+    res.json({ status: 'error', message: error.message });
+  }
+});
+
 app.get('/', (req, res) => {
   res.send('API is running...');
 });
