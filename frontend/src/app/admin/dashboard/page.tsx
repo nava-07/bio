@@ -8,6 +8,19 @@ import SecretButton from "@/components/SecretButton";
 
 const API = `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'}/api`;
 
+// Create axios instance that auto-attaches auth token
+const api = axios.create({ baseURL: API });
+api.interceptors.request.use((config) => {
+  const info = localStorage.getItem("adminInfo");
+  if (info) {
+    const parsed = JSON.parse(info);
+    if (parsed.token) {
+      config.headers.Authorization = `Bearer ${parsed.token}`;
+    }
+  }
+  return config;
+});
+
 export default function AdminDashboard() {
   const router = useRouter();
   const [adminInfo, setAdminInfo] = useState<any>(null);
@@ -79,7 +92,7 @@ export default function AdminDashboard() {
           const res = await axios.get(`${API}/services`);
           setServices(res.data);
         } else if (activeTab === "Messages") {
-          const res = await axios.get(`${API}/contacts`, { withCredentials: true });
+          const res = await api.get(`/contacts`);
           setContacts(res.data);
         }
       } catch (err) { console.error("Fetch error", err); }
@@ -91,7 +104,7 @@ export default function AdminDashboard() {
 
   const handleLogout = async () => {
     try {
-      await axios.post(`${API}/auth/logout`, {}, { withCredentials: true });
+      await api.post(`/auth/logout`, {});
       localStorage.removeItem("adminInfo");
       router.push("/admin/login");
     } catch (error) { console.error("Logout failed", error); }
@@ -119,8 +132,7 @@ export default function AdminDashboard() {
     fd.append("image", file);
     setUploading(true);
     try {
-      const res = await axios.post(`${API}/upload`, fd, { 
-        withCredentials: true, 
+      const res = await api.post(`/upload`, fd, { 
         headers: { "Content-Type": "multipart/form-data" },
         onUploadProgress: (progressEvent) => {
           if (progressEvent.total) {
@@ -133,7 +145,7 @@ export default function AdminDashboard() {
       
       // Auto-save to DB
       setSaving(true);
-      await axios.put(`${API}/settings`, newSettings, { withCredentials: true });
+      await api.put(`/settings`, newSettings);
       showMsg("Photo Uploaded and Saved!");
     } catch (err) { showMsg("Upload failed."); }
     finally { setUploading(false); setUploadProgress(null); setSaving(false); }
@@ -146,8 +158,7 @@ export default function AdminDashboard() {
     fd.append("image", file); // Backend expects "image" field for all uploads
     setUploading(true);
     try {
-      const res = await axios.post(`${API}/upload`, fd, { 
-        withCredentials: true, 
+      const res = await api.post(`/upload`, fd, { 
         headers: { "Content-Type": "multipart/form-data" },
         onUploadProgress: (progressEvent) => {
           if (progressEvent.total) {
@@ -160,7 +171,7 @@ export default function AdminDashboard() {
 
       // Auto-save to DB
       setSaving(true);
-      await axios.put(`${API}/settings`, newSettings, { withCredentials: true });
+      await api.put(`/settings`, newSettings);
       showMsg("Resume Uploaded and Saved!");
     } catch (err) { showMsg("Upload failed."); }
     finally { setUploading(false); setUploadProgress(null); setSaving(false); }
@@ -174,14 +185,13 @@ export default function AdminDashboard() {
     
     setSaving(true);
     try {
-      await axios.delete(`${API}/upload`, { 
-        data: { filePath: fileUrl },
-        withCredentials: true 
+      await api.delete(`/upload`, { 
+        data: { filePath: fileUrl }
       });
       
       const newSettings = { ...settingsData, [field]: "" };
       setSettingsData(newSettings);
-      await axios.put(`${API}/settings`, newSettings, { withCredentials: true });
+      await api.put(`/settings`, newSettings);
       showMsg(`${field === 'photoUrl' ? 'Photo' : 'Resume'} deleted!`);
     } catch (err) {
       console.error(err);
@@ -194,7 +204,7 @@ export default function AdminDashboard() {
   const saveSettings = async () => {
     setSaving(true);
     try {
-      await axios.put(`${API}/settings`, settingsData, { withCredentials: true });
+      await api.put(`/settings`, settingsData);
       showMsg("Settings saved!");
     } catch (err) { showMsg("Save failed."); }
     finally { setSaving(false); }
@@ -206,7 +216,7 @@ export default function AdminDashboard() {
   const handleCreate = async (endpoint: string, dataOverride?: any) => {
     setSavingForm(true);
     try {
-      await axios.post(`${API}/${endpoint}`, dataOverride || formData, { withCredentials: true });
+      await api.post(`/${endpoint}`, dataOverride || formData);
       showMsg("Created!"); setShowForm(false); setFormData({});
       // refetch
       const res = await axios.get(`${API}/${endpoint}`);
@@ -227,7 +237,7 @@ export default function AdminDashboard() {
   const handleUpdate = async (endpoint: string, id: string, dataOverride?: any) => {
     setSavingForm(true);
     try {
-      await axios.put(`${API}/${endpoint}/${id}`, dataOverride || formData, { withCredentials: true });
+      await api.put(`/${endpoint}/${id}`, dataOverride || formData);
       showMsg("Updated!"); setShowForm(false); setEditItem(null); setFormData({});
       const res = await axios.get(`${API}/${endpoint}`);
       if (endpoint === "projects") setProjects(res.data);
@@ -247,7 +257,7 @@ export default function AdminDashboard() {
   const handleDelete = async (endpoint: string, id: string) => {
     if (!confirm("Are you sure?")) return;
     try {
-      await axios.delete(`${API}/${endpoint}/${id}`, { withCredentials: true });
+      await api.delete(`/${endpoint}/${id}`);
       showMsg("Deleted!");
       const res = await axios.get(`${API}/${endpoint}`);
       if (endpoint === "projects") setProjects(res.data);
@@ -264,9 +274,9 @@ export default function AdminDashboard() {
   const handleDeleteContact = async (id: string) => {
     if (!confirm("Delete this message?")) return;
     try {
-      await axios.delete(`${API}/contacts/${id}`, { withCredentials: true });
+      await api.delete(`/contacts/${id}`);
       showMsg("Deleted!");
-      const res = await axios.get(`${API}/contacts`, { withCredentials: true });
+      const res = await api.get(`/contacts`);
       setContacts(res.data);
     } catch (err) { showMsg("Delete failed."); }
   };
@@ -780,8 +790,7 @@ export default function AdminDashboard() {
                         fd.append("image", file);
                         setUploading(true);
                         try {
-                          const res = await axios.post(`${API}/upload`, fd, { 
-                            withCredentials: true, 
+                          const res = await api.post(`/upload`, fd, { 
                             headers: { "Content-Type": "multipart/form-data" },
                             onUploadProgress: (progressEvent) => {
                               if (progressEvent.total) {
