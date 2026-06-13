@@ -8,6 +8,21 @@ const generateToken = (id) => {
   });
 };
 
+export const seedAdmin = async (req, res) => {
+  try {
+    await User.deleteMany();
+    await User.create({
+      name: 'navaneeth9788',
+      email: 'navaneeth9788@gmail.com',
+      password: 'Navaneeth@530',
+      role: 'admin'
+    });
+    res.json({ message: 'Database successfully seeded with new admin credentials!' });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
 // @desc    Auth user & get token
 // @route   POST /api/auth/login
 // @access  Public
