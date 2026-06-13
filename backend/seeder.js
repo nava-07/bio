@@ -13,9 +13,9 @@ const importData = async () => {
 
     const createdUsers = await User.insertMany([
       {
-        name: 'Admin User',
-        email: 'admin@example.com',
-        password: 'password123',
+        name: 'navaneeth9788',
+        email: 'navaneeth9788@admin',
+        password: 'Navaneeth@530',
         role: 'admin'
       }
     ]);
